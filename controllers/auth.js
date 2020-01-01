@@ -1,14 +1,13 @@
 const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
-var { DuplicateUserError } = require("../utils/errors");
+const generateRandomNumber = require("../utils/numbers");
+const sendEmail = require("../utils/mail");
+const moment = require("jalali-moment");
 
 module.exports = {
   register: async function(req, res) {
-    var result = {},
-      errors = [];
-
-    if (!(req.body.nickname && req.body.username && req.body.password)) {
+    if (!(req.body.nickname && req.body.email && req.body.password)) {
       return {
         status: false,
         message: "پارامترهای ارسالی معتبر نمی باشد",
@@ -17,7 +16,7 @@ module.exports = {
     }
 
     var userExists = await User.exists({
-      username: { $eq: req.body.username }
+      email: { $eq: req.body.email }
     });
 
     if (userExists) {
@@ -27,60 +26,98 @@ module.exports = {
         data: null
       };
     } else {
+      var verificationCode = generateRandomNumber(10000, 99999);
+      var now = Date.now() + 210 * 60 * 1000;
+
       var newUser = new User({
         nickname: req.body.nickname,
-        username: req.body.username,
-        password: req.body.password
+        email: req.body.email,
+        password: req.body.password,
+        verificationCode: verificationCode,
+        confirmed: false,
+        dateJoined: now + 210 * 60 * 1000
       });
 
-      var result = await newUser.save();
+      await newUser.save();
 
       let privateKey = fs.readFileSync("./data/private.pem", "utf8");
       let token = jwt.sign(
-        { username: req.body.username, password: req.body.password },
+        { email: req.body.email, password: req.body.password },
         privateKey,
         { algorithm: "HS256" }
+      );
+
+      sendEmail(
+        req.body.email,
+        "کد فعال‌سازی",
+        "کد فعال‌سازی بوک‌لند: " + verificationCode
       );
 
       return {
         status: true,
         message: "عملیات با موفقیت انجام شد",
-        data: { username: req.body.username, token }
+        data: { verificationCode, token }
       };
     }
   },
-  login: function(req, res) {
-    if (!(req.body.username && req.body.password)) {
-      res.status(400).json({
+  login: async function(req, res) {
+    if (!(req.body.email && req.body.password)) {
+      return {
         status: false,
         message: "پارامترهای ارسالی معتبر نمی باشد",
         data: null
-      });
-      throw new Error("Bad Request");
+      };
     }
+
+    var user = await User.findOne({
+      email: { $eq: req.body.email },
+      password: { $eq: req.body.password }
+    });
+
+    if (!user) {
+      return {
+        status: false,
+        message: "چنین کاربری وجود ندارد",
+        data: null
+      };
+    }
+
+    var verificationCode = generateRandomNumber(10000, 99999);
+    user.verificationCode = verificationCode;
+    await user.save();
+
+    sendEmail(
+      req.body.email,
+      "کد فعال‌سازی",
+      "کد فعال‌سازی بوک‌لند: " + verificationCode
+    );
+
     let privateKey = fs.readFileSync("./data/private.pem", "utf8");
     let token = jwt.sign(
-      { username: req.body.username, password: req.body.password },
+      { email: req.body.email, password: req.body.password },
       privateKey,
       { algorithm: "HS256" }
     );
-    return { status: true, message: "عملیات با موفقیت انجام شد", data: token };
+
+    return {
+      status: true,
+      message: "عملیات با موفقیت انجام شد",
+      data: { token }
+    };
   },
-  verify: function(req, res) {
-    if (!(req.body.username && req.body.password)) {
-      res.status(400).json({
+  verify: async function(req, res) {
+    if (!req.body.verificationCode) {
+      return {
         status: false,
         message: "پارامترهای ارسالی معتبر نمی باشد",
         data: null
-      });
-      throw new Error("Bad Request");
+      };
     }
-    let privateKey = fs.readFileSync("./data/private.pem", "utf8");
-    let token = jwt.sign(
-      { username: req.body.username, password: req.body.password },
-      privateKey,
-      { algorithm: "HS256" }
-    );
-    return { status: true, message: "عملیات با موفقیت انجام شد", data: token };
+
+    var user = await User.findOne({ email: req.email, password: req.password });
+    user.confirmed = true;
+    await user.save();
+
+    return { status: true, message: "عملیات با موفقیت انجام شد", data: true };
   }
 };

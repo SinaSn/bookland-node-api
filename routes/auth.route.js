@@ -11,13 +11,13 @@ router.post("/register", async (req, res) => {
   res.json({ result });
 });
 
-router.post("/login", (req, res) => {
-  result = authController.login(req, res);
+router.post("/login", async (req, res) => {
+  result = await authController.login(req, res);
   res.json({ result });
 });
 
-router.post("/verify", authMiddleware.isAuthenticated, (req, res) => {
-  result = authController.verify(req, res);
+router.post("/verify", authMiddleware.isAuthenticated, async (req, res) => {
+  result = await authController.verify(req, res);
   res.json({ result });
 });
 

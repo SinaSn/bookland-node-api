@@ -16,6 +16,10 @@ module.exports = {
           });
           throw new Error("Not Authorized");
         }
+
+        req.email = user.email;
+        req.password = user.password;
+
         return next();
       });
     } else {
