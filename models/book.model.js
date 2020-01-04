@@ -1,7 +1,7 @@
-const Author = require("./author.model");
-const Publisher = require("./publisher.model");
-const Genre = require("./genre.model");
-const User = require("./user.model");
+const Author = require("./author.model").schema;
+const Publisher = require("./publisher.model").schema;
+const Genre = require("./genre.model").schema;
+const User = require("./user.model").schema;
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 

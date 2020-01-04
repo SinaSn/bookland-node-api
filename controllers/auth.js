@@ -6,8 +6,8 @@ const sendEmail = require("../utils/mail");
 const hash = require("../utils/hash");
 //const sendSMS = require("../utils/sms");
 
-async function register(req, res) {
-  if (!(req.body.nickname && req.body.email && req.body.password)) {
+async function register(model) {
+  if (!(model.nickname && model.email && model.password)) {
     return {
       status: false,
       message: "پارامترهای ارسالی معتبر نمی باشد",
@@ -16,7 +16,7 @@ async function register(req, res) {
   }
 
   var userExists = await User.exists({
-    email: { $eq: req.body.email }
+    email: { $eq: model.email }
   });
 
   if (userExists) {
@@ -30,9 +30,9 @@ async function register(req, res) {
     var now = Date.now() + 210 * 60 * 1000;
 
     var newUser = new User({
-      nickname: req.body.nickname,
-      email: req.body.email,
-      password: hash.encrypt(req.body.password),
+      nickname: model.nickname,
+      email: model.email,
+      password: hash.encrypt(model.password),
       verificationCode: verificationCode,
       confirmed: false,
       dateJoined: now
@@ -42,17 +42,17 @@ async function register(req, res) {
 
     let privateKey = fs.readFileSync("./data/private.pem", "utf8");
     let token = jwt.sign(
-      { email: req.body.email, password: req.body.password },
+      { email: model.email, password: model.password },
       privateKey,
       { algorithm: "HS256" }
     );
 
     sendEmail(
-      req.body.email,
+      model.email,
       "کد فعال‌سازی",
       "کد فعال‌سازی بوک‌لند: " + verificationCode
     );
-    //await sendSMS([req.body.phoneNumber], ["کد فعال‌سازی بوک‌لند: " + verificationCode]);
+    //await sendSMS([model.phoneNumber], ["کد فعال‌سازی بوک‌لند: " + verificationCode]);
 
     return {
       status: true,
@@ -62,8 +62,8 @@ async function register(req, res) {
   }
 }
 
-async function login(req, res) {
-  if (!(req.body.email && req.body.password)) {
+async function login(model) {
+  if (!(model.email && model.password)) {
     return {
       status: false,
       message: "پارامترهای ارسالی معتبر نمی باشد",
@@ -72,8 +72,8 @@ async function login(req, res) {
   }
 
   var user = await User.findOne({
-    email: { $eq: req.body.email },
-    password: { $eq: hash.encrypt(req.body.password) }
+    email: { $eq: model.email },
+    password: { $eq: hash.encrypt(model.password) }
   });
 
   if (!user) {
@@ -89,15 +89,15 @@ async function login(req, res) {
   await user.save();
 
   sendEmail(
-    req.body.email,
+    model.email,
     "کد فعال‌سازی",
     "کد فعال‌سازی بوک‌لند: " + verificationCode
   );
-  //await sendSMS([req.body.phoneNumber], ["کد فعال‌سازی بوک‌لند: " + verificationCode]);
+  //await sendSMS([model.phoneNumber], ["کد فعال‌سازی بوک‌لند: " + verificationCode]);
 
   let privateKey = fs.readFileSync("./data/private.pem", "utf8");
   let token = jwt.sign(
-    { email: req.body.email, password: req.body.password },
+    { email: model.email, password: model.password },
     privateKey,
     { algorithm: "HS256" }
   );
@@ -105,12 +105,12 @@ async function login(req, res) {
   return {
     status: true,
     message: "عملیات با موفقیت انجام شد",
-    data: { token }
+    data: { verificationCode, token }
   };
 }
 
-async function verify(req, res) {
-  if (!req.body.verificationCode) {
+async function verify(model) {
+  if (!model.body.verificationCode) {
     return {
       status: false,
       message: "پارامترهای ارسالی معتبر نمی باشد",
@@ -119,8 +119,8 @@ async function verify(req, res) {
   }
 
   var user = await User.findOne({
-    email: req.email,
-    password: hash.encrypt(req.password)
+    email: model.email,
+    password: hash.encrypt(model.password)
   });
 
   if (user.confirmed) {
@@ -131,7 +131,7 @@ async function verify(req, res) {
     };
   }
 
-  if (user.verificationCode !== req.body.verificationCode) {
+  if (user.verificationCode !== model.body.verificationCode) {
     return { status: false, message: "کد واردشده معتبر نیست", data: null };
   }
   user.confirmed = true;
