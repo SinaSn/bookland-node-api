@@ -1,6 +1,8 @@
+const Slider = require("../models/slider.model");
+const Category = require("../models/category.model");
 const Book = require("../models/book.model");
 
-async function getBooks(filter) {
+async function getUserInfo() {
   try {
     var authorFirstName = null,
       authorLastName = null;
@@ -55,68 +57,34 @@ async function getBooks(filter) {
   }
 }
 
-async function getBookInfo(model) {
-  if (model.id === undefined) {
-    return {
-      status: false,
-      message: "پارامترهای ارسالی صحیح نیست",
-      data: null
-    };
-  }
-
-  var book = await Book.findById(model.id, function(err, book) {
-    console.log(err || book);
-  });
-
-  if (book == null) {
-    return {
-      status: false,
-      message: "چنین کتابی وجود ندارد",
-      data: null
-    };
-  }
-
-  return {
-    status: true,
-    message: "عملیات با موفقیت انجام شد",
-    data: book
-  };
-}
-
-async function getAuthors(filter) {
+async function getBasicInfo() {
   try {
-    var filterArr = {
-      "author.firstName": { $regex: authorFirstName || /\s*/ },
-      "author.lastName": { $regex: authorLastName || /\s*/ }
-    };
-
-    console.log(filterArr);
-
-    var books = await Book.find(filterArr).select("comments");
-
-    if (books.length == 0) {
-      return {
-        status: false,
-        message: "نتیجه‌ای یافت نشد",
-        data: null
-      };
-    }
+    var sliders = await Slider.find({ enabled: true });
+    var categories = await Category.find();
+    var latestBooks = await Book.find({ enabled: true })
+      .sort("-dateCreated")
+      .limit(10);
+    var popularBooks = await Book.find({ enabled: true })
+      .sort({
+        "likers.length": -1
+      })
+      .limit(10);
 
     return {
       status: true,
       message: "عملیات با موفقیت انجام شد",
-      data: books
+      data: { sliders, categories, latestBooks, popularBooks }
     };
   } catch (err) {
     return {
       status: false,
-      message: "پارامترهای ارسالی صحیح نمی‌باشد",
+      message: "خطای سرور",
       data: null
     };
   }
 }
 
 module.exports = {
-  getBooks,
-  getBookInfo
+  getUserInfo,
+  getBasicInfo
 };

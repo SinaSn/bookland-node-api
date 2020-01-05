@@ -4,15 +4,17 @@ const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 
 // Routes
-const homeRoutes = require("./routes/home.route");
+const startupRoutes = require("./routes/startup.route");
 const authRoutes = require("./routes/auth.route");
+const bookRoutes = require("./routes/book.route");
 
 var app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-app.use("/api/v1/", homeRoutes);
+app.use("/api/v1/startup", startupRoutes);
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/book", bookRoutes);
 
 app.listen(configs.port, function() {
   console.log(`Listening on port ${configs.port}`);

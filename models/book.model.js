@@ -1,6 +1,5 @@
 const Author = require("./author.model").schema;
 const Publisher = require("./publisher.model").schema;
-const Genre = require("./genre.model").schema;
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -10,7 +9,7 @@ const bookSchema = new Schema({
   description: String,
   author: Author,
   publisher: Publisher,
-  genre: Genre,
+  category: { type: Schema.Types.ObjectId, ref: "categories" },
   isbn: String,
   count: Number,
   price: Number,

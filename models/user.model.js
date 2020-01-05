@@ -17,7 +17,8 @@ const userSchema = new Schema({
   phoneModel: String,
   appVersion: String,
   appBuildVersion: String,
-  confirmed: Boolean
+  confirmed: Boolean,
+  role: String
 });
 
 const User = mongoose.model("User", userSchema);

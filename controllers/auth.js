@@ -35,7 +35,8 @@ async function register(model) {
       password: hash.encrypt(model.password),
       verificationCode: verificationCode,
       confirmed: false,
-      dateJoined: now
+      dateJoined: now,
+      role: "User"
     });
 
     await newUser.save();
