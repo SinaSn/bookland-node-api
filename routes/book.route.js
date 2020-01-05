@@ -11,4 +11,19 @@ router.post("/getBookInfo", async (req, res) => {
   res.json({ result });
 });
 
+router.post("/getAuthors", async (req, res) => {
+  result = await bookController.getAuthors(req.body);
+  res.json({ result });
+});
+
+router.post("/getComments", async (req, res) => {
+  result = await bookController.getComments(req.body);
+  res.json({ result });
+});
+
+router.post("/submitComment", async (req, res) => {
+  result = await bookController.submitComment(req.body);
+  res.json({ result });
+});
+
 module.exports = router;

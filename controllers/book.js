@@ -1,4 +1,5 @@
 const Book = require("../models/book.model");
+const Comment = require("../models/comment.model");
 
 async function getBooks(filter) {
   try {
@@ -55,8 +56,8 @@ async function getBooks(filter) {
   }
 }
 
-async function getBookInfo(model) {
-  if (model.id === undefined) {
+async function getBookInfo({ id }) {
+  if (id === undefined) {
     return {
       status: false,
       message: "پارامترهای ارسالی صحیح نیست",
@@ -64,9 +65,7 @@ async function getBookInfo(model) {
     };
   }
 
-  var book = await Book.findById(model.id, function(err, book) {
-    console.log(err || book);
-  });
+  var book = await Book.findById(id);
 
   if (book == null) {
     return {
@@ -83,16 +82,22 @@ async function getBookInfo(model) {
   };
 }
 
-async function getAuthors(filter) {
+async function getAuthors({ author }) {
   try {
+    var authorFirstName = null,
+      authorLastName = null;
+
+    if (author && author.split("-").length == 2) {
+      authorFirstName = author.split("-")[0];
+      authorLastName = author.split("-")[1];
+    }
+
     var filterArr = {
       "author.firstName": { $regex: authorFirstName || /\s*/ },
       "author.lastName": { $regex: authorLastName || /\s*/ }
     };
 
-    console.log(filterArr);
-
-    var books = await Book.find(filterArr).select("comments");
+    var books = await Book.find(filterArr).select("author");
 
     if (books.length == 0) {
       return {
@@ -116,7 +121,66 @@ async function getAuthors(filter) {
   }
 }
 
+async function getComments({ bookId }) {
+  try {
+    var comments = await Comment.find({ book: bookId, confirmed: true });
+
+    if (comments.length == 0) {
+      return {
+        status: false,
+        message: "نظری ثبت نشده است",
+        data: null
+      };
+    }
+
+    return {
+      status: true,
+      message: "عملیات با موفقیت انجام شد",
+      data: comments
+    };
+  } catch (err) {
+    return {
+      status: false,
+      message: "پارامترهای ارسالی صحیح نمی‌باشد",
+      data: null
+    };
+  }
+}
+
+async function submitComment({ title, text, bookId, userId }) {
+  try {
+    var now = Date.now() + 210 * 60 * 1000;
+
+    var comment = new Comment({
+      title,
+      text,
+      user: userId,
+      book: bookId,
+      confirmed: false,
+      dateCreated: now
+    });
+
+    await comment.save();
+
+    return {
+      status: true,
+      message: "عملیات با موفقیت انجام شد",
+      data: comment
+    };
+  } catch (err) {
+    console.log(err);
+    return {
+      status: false,
+      message: "پارامترهای ارسالی صحیح نمی‌باشد",
+      data: null
+    };
+  }
+}
+
 module.exports = {
   getBooks,
-  getBookInfo
+  getBookInfo,
+  getComments,
+  getAuthors,
+  submitComment
 };
