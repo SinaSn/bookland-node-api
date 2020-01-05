@@ -1,7 +1,6 @@
 const Author = require("./author.model").schema;
 const Publisher = require("./publisher.model").schema;
 const Genre = require("./genre.model").schema;
-const User = require("./user.model").schema;
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
@@ -24,7 +23,7 @@ const bookSchema = new Schema({
   coverType: String,
   releaseYear: Number,
   publishTimes: Number,
-  likers: [User],
+  likers: { type: Schema.Types.ObjectId, ref: "users" },
   coverImage: String,
   enabled: Boolean,
   dateCreated: Date

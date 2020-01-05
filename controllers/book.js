@@ -10,19 +10,61 @@ async function getBooks(filter) {
       authorLastName = filter.author.split("-")[1];
     }
 
+    if (filter.minPrice > filter.maxPrice) {
+      return {
+        status: false,
+        message: "بازه قیمت صحیح نیست",
+        data: null
+      };
+    }
+
     var filterArr = {
-      title: filter.title || /\s*/,
-      "author.firstName": authorFirstName || /\s*/,
-      "author.lastName": authorLastName || /\s*/,
-      "publisher.title": filter.publisher || /\s*/,
-      "genre.title": filter.genre || /\s*/,
+      title: { $regex: filter.title || /\s*/ },
+      "author.firstName": { $regex: authorFirstName || /\s*/ },
+      "author.lastName": { $regex: authorLastName || /\s*/ },
+      "publisher.title": { $regex: filter.publisher || /\s*/ },
+      "genre.title": { $regex: filter.genre || /\s*/ },
       price: { $gte: 0, $lte: Infinity },
       language: filter.language || /\s*/,
-      coverType: filter.coverType || /\s*/,
-      format: filter.format || /\s*/
+      coverType: { $regex: filter.coverType || /\s*/ },
+      format: { $regex: filter.format || /\s*/ }
     };
 
-    var books = await Book.find(filterArr);
+    var asc = filter.sort ? 1 : -1;
+    var books = await Book.find(filterArr).sort(["dateCreated", asc]);
+
+    if (books.length == 0) {
+      return {
+        status: false,
+        message: "نتیجه‌ای یافت نشد",
+        data: null
+      };
+    }
+
+    return {
+      status: true,
+      message: "عملیات با موفقیت انجام شد",
+      data: books
+    };
+  } catch (err) {
+    return {
+      status: false,
+      message: "پارامترهای ارسالی صحیح نمی‌باشد",
+      data: null
+    };
+  }
+}
+
+async function getAuthors(filter) {
+  try {
+    var filterArr = {
+      "author.firstName": { $regex: authorFirstName || /\s*/ },
+      "author.lastName": { $regex: authorLastName || /\s*/ }
+    };
+
+    console.log(filterArr);
+
+    var books = await Book.find(filterArr).select("comments");
 
     if (books.length == 0) {
       return {
