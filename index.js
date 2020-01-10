@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const startupRoutes = require("./routes/startup.route");
 const authRoutes = require("./routes/auth.route");
 const bookRoutes = require("./routes/book.route");
+const paymentRoutes = require("./routes/payment.route");
 
 var app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -15,6 +16,7 @@ app.use(bodyParser.json());
 app.use("/api/v1/startup", startupRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/book", bookRoutes);
+app.use("/api/v1/payment", paymentRoutes);
 
 app.listen(configs.port, function() {
   console.log(`Listening on port ${configs.port}`);

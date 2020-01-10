@@ -179,7 +179,6 @@ async function submitComment({ title, text, bookId, userId }) {
       data: comment
     };
   } catch (err) {
-    console.log(err);
     return {
       status: false,
       message: "پارامترهای ارسالی صحیح نمی‌باشد",
